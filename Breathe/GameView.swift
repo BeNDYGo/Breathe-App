@@ -3,7 +3,7 @@ import SwiftUI
 
 struct GameView: View {
     var body: some View {
-        Text("hello")
+        Text("Hello")
             .font(.largeTitle)
             .fontWeight(.bold)
     }

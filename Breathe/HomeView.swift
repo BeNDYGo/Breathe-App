@@ -31,7 +31,7 @@ struct HomeView: View {
 
                             Image(systemName: "aqi.low")
                                 .font(.system(size: 48))
-                                .foregroundStyle(.gray)
+                                .foregroundStyle(Color(hex: "15de07"))
 
                         }
                         .frame(width: 350, height: 70)
@@ -48,6 +48,7 @@ struct HomeView: View {
                                 HStack(alignment: .bottom, spacing: 4) {
                                     Text("\(homeData?.activity ?? 0)")
                                         .font(.system(size: 100))
+                                        //.foregroundStyle(Color(hex: allergenColor(value: homeData?.activity ?? 0)))
                                     Text("/ 10")
                                         .padding(.bottom, 25)
                                 }
@@ -72,9 +73,9 @@ struct HomeView: View {
  */
 // Блок с основными аллергенами
                     ZStack(alignment: .center) {
-                        MyRectangle(width: 350, height: 200)
+                        MyRectangle(width: 350, height: 210)
                         
-                        VStack(alignment: .leading, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 18) {
                             ForEach(homeData?.allergens ?? [], id: \.name) {allergen in
                                 VStack(alignment: .leading, spacing: 6){
                                     HStack{

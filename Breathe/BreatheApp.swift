@@ -21,7 +21,7 @@ struct BreatheApp: App {
                         Label("Game", systemImage: "tree.fill")
                     }
             }
-            .tint(.gray)
+            .tint(Color(hex: "15de07"))
         }
     }
 }
