@@ -1,14 +1,27 @@
 # macOS
 .DS_Store
 
-# Xcode user data
+# Xcode
 xcuserdata/
 *.xcuserstate
-
-# Build artifacts
 DerivedData/
-.build/
 
-# Swift Package Manager
+# SwiftPM
+.build/
 Packages/
 Package.resolved
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# CocoaPods
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# Archives
+*.xcarchive
