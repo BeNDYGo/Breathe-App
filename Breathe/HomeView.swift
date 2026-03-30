@@ -1,10 +1,16 @@
 
 import SwiftUI
+import CoreLocation
 
 struct HomeView: View {
-    let headerInfo = HeaderInfo()
+    var headerInfo = HeaderInfo()
     
     @State private var homeData: HeadActivity?
+    @State private var locationManager = LocationManager()
+    
+    @State private var isShowingCitySearch = false
+    @State private var showLocationPrompt = true
+    
     
     var body: some View {
         ZStack {
@@ -13,13 +19,13 @@ struct HomeView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 20) {
-// Блок с датой и погодой
+// MARK: -  Блок с датой и погодой
                     ZStack {
                         MyRectangle(width: 350, height: 70)
 
-                        HStack(spacing: 60) {
+                        HStack() {
                             VStack(alignment: .leading) {
-                                Text("Москва")
+                                Text("\(homeData?.city ?? "Город")")
                                     .font(.system(size: 20).bold())
                                 HStack{
                                     DateText(text: headerInfo.dayNumber)
@@ -27,17 +33,22 @@ struct HomeView: View {
                                 }
                                 
                             }
-                            Image(systemName: homeData?.weatherImage ?? "airplane.up.right")
-
-                            Image(systemName: "aqi.low")
-                                .font(.system(size: 48))
-                                .foregroundStyle(Color(hex: "15de07"))
+                            Spacer()
+                            
+                            Button {
+                                isShowingCitySearch = true
+                            } label: {
+                                Image(systemName: "magnifyingglass")
+                                    .font(.system(size: 30))
+                                    .foregroundStyle(.black)
+                            }
 
                         }
+                        .padding(.horizontal, 20)
                         .frame(width: 350, height: 70)
                         
                     }
-// Блок с баллами
+// MARK: -  Блок с баллами
                     ZStack {
                         MyRectangle(width: 350, height: 170)
 
@@ -71,7 +82,7 @@ struct HomeView: View {
                     }
                     .frame(width: 310, alignment: .leading)
  */
-// Блок с основными аллергенами
+// MARK: -  Блок с основными аллергенами
                     ZStack(alignment: .center) {
                         MyRectangle(width: 350, height: 210)
                         
@@ -97,7 +108,7 @@ struct HomeView: View {
                         }
                     }
                     
-// Блок как вы себя чувствуете
+// MARK: -  Блок как вы себя чувствуете
                     ZStack(alignment: .top) {
                         MyRectangle(width: 350, height: 170)
                         VStack(spacing: 15){
@@ -127,13 +138,42 @@ struct HomeView: View {
                 }
                 .padding(.top, 15)
             }
+            if showLocationPrompt {
+                LocationPromptView {
+                    // Это код выполнится, когда нажмут "Далее"
+                    // Пока мы просто закрываем окно
+                    showLocationPrompt = false
+                }
+                // Анимация плавного появления и исчезновения
+                .transition(.opacity)
+                .animation(.easeInOut, value: showLocationPrompt)
+            }
         }
-        .task {
-            homeData = await loadHomeData()
+        // MARK: - Окно с городами
+        .sheet(isPresented: $isShowingCitySearch) {
+                    VStack {
+                        Text("Тут будет список городов")
+                            .font(.headline)
+                    }
+                    .presentationDetents([.medium, .large])
+                }
+        // MARK: - task,onChange
+        .task(id: locationManager.location) {
+            // 1. данные из UserDefaults
+            if let loc = locationManager.location {
+                print("location found")
+                homeData = await loadHomeData(lat: loc.coordinate.latitude, lon: loc.coordinate.longitude)
+                print("data loaded")
+            } else {
+                // 2. запрос к GPS
+                print("request to GPS...")
+                locationManager.requestOneTimeLocation()
+            }
         }
     }
 }
 
+// MARK: - Доп функции
 struct DateText: View {
     let text: String
     var body: some View {
@@ -183,6 +223,7 @@ struct feelButton: View {
                 
             }
             if type == "Normal"{
+                
                 ZStack{
                     Image(systemName: "bolt.heart")
                         .font(.system(size: 35))
@@ -205,6 +246,51 @@ struct feelButton: View {
                 .foregroundStyle(.green)
             }
             
+        }
+    }
+}
+
+struct LocationPromptView: View {
+    // Эта переменная будет хранить действие, которое произойдет при нажатии кнопки
+    var onNextAction: () -> Void
+    
+    var body: some View {
+        ZStack {
+            // 1. Полупрозрачный темный фон на весь экран
+            Color.black.opacity(0.4)
+                .ignoresSafeArea()
+            
+            // 2. Сама карточка по центру
+            VStack(spacing: 20) {
+                Image(systemName: "location.circle.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 80, height: 80)
+                    .foregroundStyle(.green) // Можете поменять на свой цвет
+                
+                Text("Нам нужен доступ к геолокации, чтобы узнать ваш город")
+                    .font(.system(size: 18, weight: .medium))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 10)
+                
+                Button {
+                    // Вызываем переданное действие
+                    onNextAction()
+                } label: {
+                    Text("Далее")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color(hex: "15de07")) // Ваш зеленый цвет
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                }
+                .padding(.top, 10)
+            }
+            .padding(25)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 30))
+            .padding(.horizontal, 40) // Отступы карточки от краев экрана
         }
     }
 }

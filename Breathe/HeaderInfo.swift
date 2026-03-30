@@ -32,6 +32,7 @@ struct HeaderInfo {
 }
 
 struct HeadActivity: Decodable {
+    let city: String?
     let activity: Int
     let allergens: [Allergen]
     let weatherImage: String
@@ -42,14 +43,28 @@ struct Allergen: Decodable {
     let value: Int
 }
 
-func loadHomeData() async -> HeadActivity?{
-    guard let url = URL(string: "http://127.0.0.1:8750") else {return nil}
-    do{
-        let (data, _) = try await URLSession.shared.data(from: url)
+func loadHomeData(lat: Double, lon: Double) async -> HeadActivity? {
+    guard var url = URL(string: "http://127.0.0.1:8750/homeView") else {
+        return nil
+    }
+    
+    url.append(queryItems:[
+        URLQueryItem(name: "lat", value: String(lat)),
+        URLQueryItem(name: "lon", value: String(lon))
+    ])
+    
+    do {
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
+            print("Ошибка сервера: \(httpResponse.statusCode)")
+        }
+        
         let decoded = try JSONDecoder().decode(HeadActivity.self, from: data)
         return decoded
+        
     } catch {
-        print("Ошибка загрузки")
+        print("Ошибка загрузки: \(error.localizedDescription)")
         return nil
     }
 }
