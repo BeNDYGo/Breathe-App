@@ -32,11 +32,12 @@ struct HeaderInfo {
 }
 
 struct HeadActivity: Decodable {
-    let city: String?
     let activity: Int
     let allergens: [Allergen]
     let weatherImage: String
+    let server_info: String?
 }
+
 
 struct Allergen: Decodable {
     let name: String

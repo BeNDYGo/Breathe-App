@@ -1,4 +1,3 @@
-
 import SwiftUI
 import CoreLocation
 
@@ -9,7 +8,8 @@ struct HomeView: View {
     @State private var locationManager = LocationManager()
     
     @State private var isShowingCitySearch = false
-    @State private var showLocationPrompt = true
+    
+    @AppStorage("hasSeenPrompt") private var hasSeenPrompt = false
     
     
     var body: some View {
@@ -25,8 +25,11 @@ struct HomeView: View {
 
                         HStack() {
                             VStack(alignment: .leading) {
-                                Text("\(homeData?.city ?? "Город")")
-                                    .font(.system(size: 20).bold())
+                                HStack{
+                                    Image(systemName: "map.circle").foregroundStyle(.red)
+                                    Text("\(locationManager.cityName)")
+                                        .font(.system(size: 20).bold())
+                                }
                                 HStack{
                                     DateText(text: headerInfo.dayNumber)
                                     DateText(text: headerInfo.weekday)
@@ -48,18 +51,46 @@ struct HomeView: View {
                         .frame(width: 350, height: 70)
                         
                     }
+                    
+// МАРК: - Плашка если нет города
+                    if locationManager.authStatus == .denied && locationManager.location == nil {
+                        ZStack {
+                            MyRectangle(width: 350, height: 80)
+                            
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                    .font(.system(size: 24))
+                                
+                                VStack(alignment: .leading) {
+                                    Text("Город не определен")
+                                        .font(.system(size: 16, weight: .bold))
+                                    Text("Нажмите на лупу, чтобы выбрать город вручную")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.gray)
+                                }
+                                Spacer()
+                            }
+                            .padding(.horizontal, 30)
+                        }
+                    }
 // MARK: -  Блок с баллами
                     ZStack {
                         MyRectangle(width: 350, height: 170)
 
                         HStack(alignment: .top) {
                             VStack(alignment: .leading) {
-                                Text("Активность")
-
+                                HStack{
+                                    Image(systemName:
+                                            //thermometer.variable
+                                          "flame.fill").foregroundStyle(.orange)
+                                    Text("Активность")
+                                }
                                 HStack(alignment: .bottom, spacing: 4) {
                                     Text("\(homeData?.activity ?? 0)")
-                                        .font(.system(size: 100))
-                                        //.foregroundStyle(Color(hex: allergenColor(value: homeData?.activity ?? 0)))
+                                        .font(.system(size: 100, weight: .bold, design: .rounded))
+                                        .minimumScaleFactor(0.4)
+                                        .lineLimit(1)
                                     Text("/ 10")
                                         .padding(.bottom, 25)
                                 }
@@ -84,7 +115,7 @@ struct HomeView: View {
  */
 // MARK: -  Блок с основными аллергенами
                     ZStack(alignment: .center) {
-                        MyRectangle(width: 350, height: 210)
+                        MyRectangle(width: 350, height: 410)
                         
                         VStack(alignment: .leading, spacing: 18) {
                             ForEach(homeData?.allergens ?? [], id: \.name) {allergen in
@@ -113,6 +144,8 @@ struct HomeView: View {
                         MyRectangle(width: 350, height: 170)
                         VStack(spacing: 15){
                             HStack{
+                                //medical.thermometer     heart.fill
+                                Image(systemName: "medical.thermometer").foregroundStyle(.red)
                                 Text("Как вы себя чувствуете?")
                                 Spacer()
                                 ZStack{
@@ -138,36 +171,37 @@ struct HomeView: View {
                 }
                 .padding(.top, 15)
             }
-            if showLocationPrompt {
+            if !hasSeenPrompt && locationManager.authStatus == .notDetermined {
                 LocationPromptView {
-                    // Это код выполнится, когда нажмут "Далее"
-                    // Пока мы просто закрываем окно
-                    showLocationPrompt = false
+                    // Действия при нажатии на кнопку "Далее":
+                    hasSeenPrompt = true // 1. Запоминаем, что окно показали
+                    locationManager.requestPermission() // 2. Вызываем СИСТЕМНОЕ окно Apple
                 }
-                // Анимация плавного появления и исчезновения
                 .transition(.opacity)
-                .animation(.easeInOut, value: showLocationPrompt)
+                .animation(.easeInOut, value: hasSeenPrompt)
             }
         }
         // MARK: - Окно с городами
         .sheet(isPresented: $isShowingCitySearch) {
-                    VStack {
-                        Text("Тут будет список городов")
-                            .font(.headline)
-                    }
-                    .presentationDetents([.medium, .large])
-                }
+            // Теперь мы получаем и координаты, и ИМЯ
+            CitySearchView { selectedCoordinate, selectedCityName in
+                
+                // Передаем всё в менеджер.
+                // Текст на экране изменится на "Москва" МГНОВЕННО, без тупых геокодеров.
+                locationManager.setManualLocation(coordinate: selectedCoordinate, name: selectedCityName)
+                
+            }
+            .presentationDetents([.medium, .large])
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        }
         // MARK: - task,onChange
-        .task(id: locationManager.location) {
-            // 1. данные из UserDefaults
+        .task(id: locationManager.location?.latitude) {
+            // Если у нас уже есть координаты (нашел GPS или загрузили из памяти)
             if let loc = locationManager.location {
-                print("location found")
-                homeData = await loadHomeData(lat: loc.coordinate.latitude, lon: loc.coordinate.longitude)
-                print("data loaded")
-            } else {
-                // 2. запрос к GPS
-                print("request to GPS...")
-                locationManager.requestOneTimeLocation()
+                homeData = await loadHomeData(lat: loc.latitude, lon: loc.longitude)
+            } else if locationManager.authStatus == .authorizedWhenInUse {
+                // Если разрешение есть, но координат еще нет - просим найти
+                locationManager.fetchLocation()
             }
         }
     }

@@ -1,96 +1,98 @@
 import Foundation
 import CoreLocation
 import Observation
+import MapKit
 
 @Observable
 class LocationManager: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     
-    // Координаты, которые мы будем использовать в приложении
-    var location: CLLocation?
-    var isLoading = false
-    var isDenied = false
+    var cityName: String = "Город"
+    // Только две вещи, которые нужны нашему интерфейсу:
+    var location: CLLocationCoordinate2D? // Текущие координаты
+    var authStatus: CLAuthorizationStatus // Статус разрешения (разрешили/отказали/еще не спрашивали)
 
     override init() {
+        // Сразу при инициализации узнаем текущий статус
+        self.authStatus = manager.authorizationStatus
         super.init()
         manager.delegate = self
         
-        loadSavedLocation()
+        loadSavedLocation() // Проверяем, есть ли старые сохранения
     }
 
-    func requestOneTimeLocation() {
-        if location != nil {
-            return
-        }
-        
-        isLoading = true
-        let status = manager.authorizationStatus
-        
-        if status == .notDetermined {
-            manager.requestWhenInUseAuthorization()
-        } else if status == .authorizedWhenInUse || status == .authorizedAlways {
-            manager.requestLocation()
-        } else {
-            isDenied = true
-            isLoading = false
-        }
+    // 1. Метод вызова системного окна (вызовем его после нашей красивой кнопки "Далее")
+    func requestPermission() {
+        manager.requestWhenInUseAuthorization()
     }
+
+    // 2. Метод разового запроса координат (вызывается только если разрешение уже есть)
+    func fetchLocation() {
+        manager.requestLocation()
+    }
+
+    // MARK: - Делегаты (Ответы от системы)
     
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-            let status = manager.authorizationStatus
-            print("status: \(status.rawValue)")
+        self.authStatus = manager.authorizationStatus // Обновляем статус для интерфейса
+        
+        // Если пользователь только что нажал "Разрешить", сразу просим координаты
+        if authStatus == .authorizedWhenInUse || authStatus == .authorizedAlways {
+            fetchLocation()
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations:[CLLocation]) {
+        guard let lastLocation = locations.last else { return }
+        self.location = lastLocation.coordinate
+        
+        fetchCityName(from: lastLocation.coordinate)
+        
+        // Сохраняем, чтобы не дергать GPS при следующем запуске
+        UserDefaults.standard.set(lastLocation.coordinate.latitude, forKey: "saved_lat")
+        UserDefaults.standard.set(lastLocation.coordinate.longitude, forKey: "saved_lon")
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("Ошибка GPS: \(error.localizedDescription)")
+    }
+
+    // MARK: Метод для ручной установки города из поиска
+    func setManualLocation(coordinate: CLLocationCoordinate2D, name: String) {
+        self.location = coordinate
+        self.cityName = name // Сразу ставим красивое имя без всяких геокодеров
+        
+        // Сохраняем в память и координаты, и ТЕКСТ
+        UserDefaults.standard.set(coordinate.latitude, forKey: "saved_lat")
+        UserDefaults.standard.set(coordinate.longitude, forKey: "saved_lon")
+        UserDefaults.standard.set(name, forKey: "saved_city_name")
+    }
+// MARK: - Загрузка из памяти
+    private func loadSavedLocation() {
+        let lat = UserDefaults.standard.double(forKey: "saved_lat")
+        let lon = UserDefaults.standard.double(forKey: "saved_lon")
+        let savedName = UserDefaults.standard.string(forKey: "saved_city_name") // Достаем текст
+        
+        if lat != 0 && lon != 0 {
+            self.location = CLLocationCoordinate2D(latitude: lat, longitude: lon)
             
-            if status == .authorizedWhenInUse || status == .authorizedAlways {
-                isDenied = false
-                // Как только получили разрешение — сразу запрашиваем координаты
-                manager.requestLocation()
-            } else if status == .denied || status == .restricted {
-                isDenied = true
-                isLoading = false
+            if let name = savedName {
+                self.cityName = name // Берем из памяти (например "Москва")
+            } else {
+                fetchCityName(from: self.location!) // Только на крайний случай
             }
         }
-
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let lastLocation = locations.last else { return }
-        
-        // 3. Сохраняем полученную локацию в память телефона
-        saveLocationToMemory(lastLocation)
-        
-        self.location = lastLocation
-        self.isLoading = false
     }
-
-    // MARK: - Работа с памятью (UserDefaults)
-    
-    private func saveLocationToMemory(_ location: CLLocation) {
-        let lat = location.coordinate.latitude
-        let lon = location.coordinate.longitude
-        
-        UserDefaults.standard.set(lat, forKey: "saved_latitude")
-        UserDefaults.standard.set(lon, forKey: "saved_longitude")
-        print("saved: \(lat), \(lon)")
-    }
-
-    private func loadSavedLocation() {
-        let lat = UserDefaults.standard.double(forKey: "saved_latitude")
-        let lon = UserDefaults.standard.double(forKey: "saved_longitude")
-        
-        // Если lat и lon не равны 0 (UserDefaults возвращает 0, если данных нет)
-        if lat != 0 && lon != 0 {
-            self.location = CLLocation(latitude: lat, longitude: lon)
-            print("unloading: \(lat), \(lon)")
+    private func fetchCityName(from coordinate: CLLocationCoordinate2D) {
+        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        CLGeocoder().reverseGeocodeLocation(location) { [weak self] placemarks, error in
+            if let placemark = placemarks?.first {
+                // locality - это город. Если пусто (как бывает в МСК), берем administrativeArea (регион)
+                let city = placemark.locality ?? placemark.administrativeArea ?? "Ваш город"
+                self?.cityName = city
+                // Сохраняем, чтобы больше не геокодировать
+                UserDefaults.standard.set(city, forKey: "saved_city_name")
+            }
         }
-    }
-    
-    // Метод на случай, если мы захотим "забыть" город (например, при смене города вручную)
-    func updateLocationManually(lat: Double, lon: Double) {
-        let newLocation = CLLocation(latitude: lat, longitude: lon)
-        saveLocationToMemory(newLocation)
-        self.location = newLocation
-    }
-    
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("erreor GPS: \(error.localizedDescription)")
-        isLoading = false
     }
 }
