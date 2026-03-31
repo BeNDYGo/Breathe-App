@@ -4,7 +4,7 @@
 
 В приложении собраны данные пользователей с polenclub о их самочувствии
 
-![https://github.com/BeNDYGo/Breathe-App/blob/main/preview/Preview1.png](Preview1.png)
+![https://github.com/BeNDYGo/Breathe-App/blob/main/preview/Preview1.jpg](Preview1.jpg)
 
 
 ## Ответ сервера
