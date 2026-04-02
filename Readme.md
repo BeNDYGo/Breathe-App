@@ -4,7 +4,7 @@
 
 В приложении собраны данные пользователей с polenclub о их самочувствии
 
-![https://github.com/BeNDYGo/Breathe-App/blob/main/preview/Preview1.jpg](Preview1.jpg)
+![https://github.com/BeNDYGo/Breathe-App/blob/main/preview/Preview.png](Preview.png)
 
 
 ## Ответ сервера
@@ -16,10 +16,9 @@
     { "name": "Береза", "value": 9 },
     { "name": "Орешник", "value": 3 },
     { "name": "Ольха", "value": 5 }
-  ],
-  "weatherImage": "cloud.moon.fill"
+    ...
+  ]
 }
 ```
 - текущее состояние активности
 - список активности всех аллергенов
-- текщая погода

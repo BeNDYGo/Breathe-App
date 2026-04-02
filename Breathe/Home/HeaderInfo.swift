@@ -44,31 +44,58 @@ struct Allergen: Decodable {
     let value: Int
 }
 
-func loadHomeData(lat: Double, lon: Double) async -> HeadActivity? {
-    guard var url = URL(string: "http://127.0.0.1:8750/homeView") else {
+struct urlServ: Decodable {
+    let url: String
+}
+
+func getUrlServerFromGithub() async -> String? {
+    guard let url = URL(string: "https://bendygo.github.io/BeNDYGo-API/Breathe-App-Backend.json") else {
         return nil
     }
-    
-    url.append(queryItems:[
-        URLQueryItem(name: "lat", value: String(lat)),
-        URLQueryItem(name: "lon", value: String(lon))
-    ])
-    
+
     do {
         let (data, response) = try await URLSession.shared.data(from: url)
-        
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-            print("Ошибка сервера: \(httpResponse.statusCode)")
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            return nil
         }
-        
-        let decoded = try JSONDecoder().decode(HeadActivity.self, from: data)
-        return decoded
-        
+
+        let decoded = try JSONDecoder().decode(urlServ.self, from: data)
+        return decoded.url
+    } catch {
+        print("Ошибка URL: \(error.localizedDescription)")
+        return nil
+    }
+}
+
+func loadHomeData(lat: Double, lon: Double) async -> HeadActivity? {
+    guard let baseURL = await getUrlServerFromGithub() else {
+        return nil
+    }
+
+    guard var components = URLComponents(string: "\(baseURL)/homeView") else {
+        return nil
+    }
+
+    components.queryItems = [
+        URLQueryItem(name: "lat", value: String(lat)),
+        URLQueryItem(name: "lon", value: String(lon))
+    ]
+
+    guard let url = components.url else { return nil }
+
+    do {
+        let (data, response) = try await URLSession.shared.data(from: url)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            return nil
+        }
+
+        return try JSONDecoder().decode(HeadActivity.self, from: data)
     } catch {
         print("Ошибка загрузки: \(error.localizedDescription)")
         return nil
     }
 }
+
 
 func allergenColor(value: Int) -> String {
     switch value {

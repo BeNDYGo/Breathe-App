@@ -7,21 +7,21 @@ struct BreatheApp: App {
             TabView {
                 HomeView()
                     .tabItem {
-                        Label("Home", systemImage: "house.fill")
+                        Label("Home", image: "Дом")
                     }
                 
                 GraphsView()
                     .tabItem {
-                        Label("Graphs", systemImage: "graph.2d")
+                        Label("Graphs", image: "График")
                     }
                     .badge("pro")
 
                 GameView()
                     .tabItem {
-                        Label("Game", systemImage: "tree.fill")
+                        Label("Game", image: "Дерево")
                     }
             }
-            .tint(Color(hex: "15de07"))
+            .tint(Color(hex: "ff893f"))
         }
     }
 }

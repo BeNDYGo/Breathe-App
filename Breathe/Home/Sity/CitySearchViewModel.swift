@@ -37,3 +37,4 @@ class CitySearchViewModel: NSObject, MKLocalSearchCompleterDelegate {
         print("Ошибка автодополнения: \(error.localizedDescription)")
     }
 }
+
