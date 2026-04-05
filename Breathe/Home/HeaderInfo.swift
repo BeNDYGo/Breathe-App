@@ -33,6 +33,7 @@ struct HeaderInfo {
 
 struct HeadActivity: Decodable {
     let activity: Int
+    let historyActivity: [Int]
     let allergens: [Allergen]
     let weatherImage: String
     let server_info: String?
@@ -68,9 +69,12 @@ func getUrlServerFromGithub() async -> String? {
 }
 
 func loadHomeData(lat: Double, lon: Double) async -> HeadActivity? {
-    guard let baseURL = await getUrlServerFromGithub() else {
+    
+    /*guard let baseURL = await getUrlServerFromGithub() else {
         return nil
-    }
+    }*/
+    
+    let baseURL = "http://127.0.0.1:8750"
 
     guard var components = URLComponents(string: "\(baseURL)/homeView") else {
         return nil

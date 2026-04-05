@@ -7,9 +7,12 @@ struct HomeView: View {
     
     var headerInfo = HeaderInfo()
     
-    @State private var isShowingCitySearch = false
-    
+    @State var isShowingCitySearch = false
+    @State private var activeInfo: InfoPopupData? = nil
     @AppStorage("hasSeenPrompt") private var hasSeenPrompt = false
+    
+    @State private var lastLoadedCoords: String = ""
+    
     
     var body: some View {
         ZStack {
@@ -26,15 +29,23 @@ struct HomeView: View {
                         NoSityViev()
                     }
                     // MARK: -  Блок с баллами
-                    ActivityView(homeData: homeData)
+                    ActivityView(homeData: homeData, activeInfo: $activeInfo)
 
                     // MARK: -  Блок-Таблица с основными аллергенами
-                    TableOfAllergens(homeData: homeData)
+                    TableOfAllergens(homeData: homeData, activeInfo: $activeInfo)
                     
                     // MARK: -  Блок как вы себя чувствуете
-                    FeelView()
+                    FeelView(locationManager: locationManager, homeData: $homeData)
                 }
                 .padding(.top, 15)
+            }
+            
+            if let info = activeInfo {
+                InfoPopupView(info: info) {
+                    activeInfo = nil
+                }
+                .transition(.opacity)
+                .animation(.easeInOut, value: activeInfo != nil)
             }
             
             // MARK: - окно предупреждения о GPS
@@ -50,25 +61,41 @@ struct HomeView: View {
         }
         // MARK: - Окно с городами
         .sheet(isPresented: $isShowingCitySearch) {
-            // Теперь мы получаем и координаты, и ИМЯ
             CitySearchView { selectedCoordinate, selectedCityName in
-                
-                // Передаем всё в менеджер.
-                // Текст на экране изменится на "Москва" МГНОВЕННО, без тупых геокодеров.
                 locationManager.setManualLocation(coordinate: selectedCoordinate, name: selectedCityName)
-                
             }
             .presentationDetents([.medium, .large])
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         // MARK: - task,onChange
         .task(id: locationManager.location?.latitude) {
-            // Если у нас уже есть координаты (нашел GPS или загрузили из памяти)
+            // 1. Проверяем, есть ли вообще координаты
+            guard let loc = locationManager.location else {
+                if locationManager.authStatus == .authorizedWhenInUse || locationManager.authStatus == .authorizedAlways {
+                    locationManager.fetchLocation()
+                }
+                return
+            }
+            
+            let currentCoords = "\(loc.latitude),\(loc.longitude)"
+            
+            // 2. ПРЕДОХРАНИТЕЛЬ: Если данные для этих координат уже есть, не дергаем сервер
+            if homeData != nil && lastLoadedCoords == currentCoords {
+                return
+            }
+            
+            // 3. Загружаем данные и запоминаем координаты
+            print("Loading data from backend...")
+            homeData = await loadHomeData(lat: loc.latitude, lon: loc.longitude)
+            lastLoadedCoords = currentCoords
+        }
+        .refreshable {
+            // Принудительная загрузка данных (свайп вниз)
             if let loc = locationManager.location {
+                print("Update")
                 homeData = await loadHomeData(lat: loc.latitude, lon: loc.longitude)
-            } else if locationManager.authStatus == .authorizedWhenInUse {
-                // Если разрешение есть, но координат еще нет - просим найти
-                locationManager.fetchLocation()
+                // ИСПРАВЛЕНО: берем широту и долготу напрямую
+                lastLoadedCoords = "\(loc.latitude),\(loc.longitude)"
             }
         }
     }
@@ -108,82 +135,10 @@ struct MiniRectangle: View {
     }
 }
 
-// MARK: - Ячейка Аллергена
-struct AllergenCell: View {
-    let name: String
-    let iconName: String
-    let value: Int
-    
-    var body: some View {
-        ZStack {
-            VStack {
-                HStack {
-                    Image(iconName)
-                        .resizable()
-                            .scaledToFit()
-                            .frame(width: 40, height: 40)
-                    Text(name)
-                        .foregroundStyle(Color(hex: "37475a"))
-                        .lineLimit(1)
-                        .font(.system(size: 15))
-                    Spacer()
-                }
-                .padding(.leading, 10)
-                
-                ProgressView(value: Double(value), total: 10)
-                    .frame(width: 110)
-                    .tint(Color(hex: allergenColor(value: value)))
-            }
-        }
-        // Жестко фиксируем размер, чтобы ничего никуда не уехало!
-        .frame(width: 145, height: 55)
-    }
-}
-
-// MARK: - Окно с GPS
-struct LocationPromptView: View {
-    // Эта переменная будет хранить действие, которое произойдет при нажатии кнопки
-    var onNextAction: () -> Void
-    
-    var body: some View {
-        ZStack {
-            // 1. Полупрозрачный темный фон на весь экран
-            Color.black.opacity(0.4)
-                .ignoresSafeArea()
-            
-            // 2. Сама карточка по центру
-            VStack(spacing: 20) {
-                Image(systemName: "location.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 80, height: 80)
-                    .foregroundStyle(.green) // Можете поменять на свой цвет
-                
-                Text("Нам нужен доступ к геолокации, чтобы узнать ваш город")
-                    .font(.system(size: 18, weight: .medium))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 10)
-                
-                Button {
-                    // Вызываем переданное действие
-                    onNextAction()
-                } label: {
-                    Text("Далее")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color(hex: "15de07")) // Ваш зеленый цвет
-                        .clipShape(RoundedRectangle(cornerRadius: 20))
-                }
-                .padding(.top, 10)
-            }
-            .padding(25)
-            .background(Color.white)
-            .clipShape(RoundedRectangle(cornerRadius: 30))
-            .padding(.horizontal, 40) // Отступы карточки от краев экрана
-        }
-    }
+struct InfoPopupData {
+    let title: String
+    let img: String
+    let description: String
 }
 
 #Preview {
