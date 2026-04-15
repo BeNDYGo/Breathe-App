@@ -1,17 +1,6 @@
 import SwiftUI
 
 struct TableOfAllergens: View {
-    let fixedAllergens = [
-        ("Ольха", "Ольха"),
-        ("Орешник", "Орешник"),
-        ("Берёза", "Береза"),
-        ("Дуб", "Дуб"),
-        ("Злаки", "Злаки"),
-        ("Полынь", "Полынь"),
-        ("Маревые", "Маревые"),
-        ("Амброзия", "Амброзия")
-    ]
-    
     let columns = [
         GridItem(.fixed(120), spacing: 40),
         GridItem(.fixed(120))
@@ -21,14 +10,17 @@ struct TableOfAllergens: View {
     @Binding var activeInfo: InfoPopupData?
     
     var body: some View {
-        ZStack(alignment: .center) {
-            MyRectangle(width: 350, height: 340)
-            VStack{
-                HStack{
+        ZStack(alignment: .top) {
+            MyRectangle(width: 350, height: 300)
+
+            VStack(spacing: 20) {
+                HStack {
                     Image(systemName: "list.bullet")
                         .foregroundStyle(.orange)
+
                     Text("Таблица аллергенов")
                         .foregroundStyle(Color(hex: "37475a"))
+
                     Button {
                         activeInfo = InfoPopupData(
                             title: "Таблица аллергенов",
@@ -47,31 +39,33 @@ struct TableOfAllergens: View {
                         Image(systemName: "info.circle")
                             .foregroundStyle(.gray.opacity(0.6))
                     }
+
                     Spacer()
                 }
-                .frame(width: 300)
-                
-                // Сетка
-                LazyVGrid(columns: columns, spacing: 18) {
-                    ForEach(fixedAllergens, id: \.0) { item in
-                        let name = item.0
-                        let icon = item.1
-                        
-                        let backendValue = homeData?.allergens.first(where: { $0.name == name })?.value ?? 0
-                        
-                        // Рисуем твою ячейку
-                        AllergenCell(
-                            name: name,
-                            iconName: icon,
-                            value: backendValue
-                        )
+                .frame(width: 320)
+
+                if let allergens = homeData?.allergens {
+                    LazyVGrid(columns: columns, spacing: 18) {
+                        ForEach(allergens, id: \.name) { allergen in
+                            AllergenCell(
+                                name: allergen.name,
+                                iconName: allergen.img,
+                                value: allergen.value
+                            )
+                        }
                     }
+                } else {
+                    ProgressView()
+                        .progressViewStyle(.circular)
+                        .tint(.orange)
+                        .frame(width: 300, height: 220)
                 }
             }
+            .padding(.top, 22)
         }
     }
-}
 
+}
 
 // MARK: - Ячейка Аллергена
 struct AllergenCell: View {
@@ -95,7 +89,7 @@ struct AllergenCell: View {
                 }
                 .padding(.leading, 10)
                 
-                ProgressView(value: Double(value), total: 1)
+                ProgressView(value: Double(value), total: 10)
                     .frame(width: 110)
                     .tint(.orange)
             }

@@ -3,7 +3,7 @@ import CoreLocation
 
 struct HomeView: View {
     @State private var homeData: HeadActivity?
-    @State private var locationManager = LocationManager()
+    var locationManager: LocationManager
     
     var headerInfo = HeaderInfo()
     
@@ -48,16 +48,6 @@ struct HomeView: View {
                 .animation(.easeInOut, value: activeInfo != nil)
             }
             
-            // MARK: - окно предупреждения о GPS
-            if !hasSeenPrompt && locationManager.authStatus == .notDetermined {
-                LocationPromptView {
-                    // Действия при нажатии на кнопку "Далее":
-                    hasSeenPrompt = true // 1. Запоминаем, что окно показали
-                    locationManager.requestPermission() // 2. Вызываем СИСТЕМНОЕ окно Apple
-                }
-                .transition(.opacity)
-                .animation(.easeInOut, value: hasSeenPrompt)
-            }
         }
         // MARK: - Окно с городами
         .sheet(isPresented: $isShowingCitySearch) {
@@ -133,14 +123,4 @@ struct MiniRectangle: View {
             .frame(width: width, height: height)
             .foregroundStyle(Color(hex: color))
     }
-}
-
-struct InfoPopupData {
-    let title: String
-    let img: String
-    let description: String
-}
-
-#Preview {
-    HomeView()
 }

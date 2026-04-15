@@ -33,49 +33,25 @@ struct HeaderInfo {
 
 struct HeadActivity: Decodable {
     let activity: Int
-    let historyActivity: [Int]
     let allergens: [Allergen]
-    let weatherImage: String
-    let server_info: String?
+    let weather: HomeWeather?
+    let serverInfo: String?
+}
+
+struct HomeWeather: Decodable {
+    let temperature: Double
+    let wind_speed: Double
+    let icon: String
 }
 
 
 struct Allergen: Decodable {
     let name: String
     let value: Int
-}
-
-struct urlServ: Decodable {
-    let url: String
-}
-
-func getUrlServerFromGithub() async -> String? {
-    guard let url = URL(string: "https://bendygo.github.io/BeNDYGo-API/Breathe-App-Backend.json") else {
-        return nil
-    }
-
-    do {
-        let (data, response) = try await URLSession.shared.data(from: url)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            return nil
-        }
-
-        let decoded = try JSONDecoder().decode(urlServ.self, from: data)
-        return decoded.url
-    } catch {
-        print("Ошибка URL: \(error.localizedDescription)")
-        return nil
-    }
+    let img: String
 }
 
 func loadHomeData(lat: Double, lon: Double) async -> HeadActivity? {
-    
-    /*guard let baseURL = await getUrlServerFromGithub() else {
-        return nil
-    }*/
-    
-    let baseURL = "http://127.0.0.1:8750"
-
     guard var components = URLComponents(string: "\(baseURL)/homeView") else {
         return nil
     }
@@ -92,7 +68,6 @@ func loadHomeData(lat: Double, lon: Double) async -> HeadActivity? {
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             return nil
         }
-
         return try JSONDecoder().decode(HeadActivity.self, from: data)
     } catch {
         print("Ошибка загрузки: \(error.localizedDescription)")
@@ -101,13 +76,3 @@ func loadHomeData(lat: Double, lon: Double) async -> HeadActivity? {
 }
 
 
-func allergenColor(value: Int) -> String {
-    switch value {
-    case 0...3:
-        return "e9fa93"
-    case 4...8:
-        return "ffe6a8"
-    default:
-        return "fa9393"
-    }
-}

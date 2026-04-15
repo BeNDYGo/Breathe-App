@@ -1,40 +1,46 @@
 import SwiftUI
+let Orange = "ff893f"
 
 @main
 struct BreatheApp: App {
     @AppStorage("isFirstLaunch") private var isFirstLaunch = true
-    
+    @State private var locationManager = LocationManager()
+    @State private var onboardingStep: Int = 0
+
     var body: some Scene {
         WindowGroup {
             if isFirstLaunch {
-                WelcomeView {
-                    withAnimation { isFirstLaunch = false }
+                if onboardingStep == 0 {
+                    WelcomeView {
+                        withAnimation { onboardingStep = 1 }
+                    }
+                } else if onboardingStep == 1 {
+                    OnboardingLocationView(locationManager: locationManager) {
+                        withAnimation { isFirstLaunch = false }
+                    }
                 }
+                
             } else {
-                MainTabView()
+                MainTabView(locationManager: locationManager)
             }
         }
     }
 }
 
 struct MainTabView: View {
+    var locationManager: LocationManager
+    
     var body: some View {
         TabView {
-            HomeView()
-                .tabItem {
-                    Label("Home", image: "Дом")
-                }
+            HomeView(locationManager: locationManager)
+                .tabItem { Label("Home", image: "Дом") }
             
-            GraphsView()
-                .tabItem {
-                    Label("Graphs", image: "График")
-                }
+            GraphsView(locationManager: locationManager)
+                .tabItem { Label("Graphs", image: "График") }
                 .badge("pro")
-
+            
             GameView()
-                .tabItem {
-                    Label("Game", image: "Дерево")
-                }
+                .tabItem { Label("Game", image: "Дерево") }
         }
         .tint(Color(hex: "ff893f"))
     }

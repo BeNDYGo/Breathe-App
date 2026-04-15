@@ -1,113 +1,108 @@
+import Foundation
 import SwiftUI
-import Charts
 
 struct ActivityView: View {
     var homeData: HeadActivity?
     @Binding var activeInfo: InfoPopupData?
-    @State private var isPro = true
+    
+    private var temperatureText: String {
+        guard let temperature = homeData?.weather?.temperature else {
+            return "--°C"
+        }
+        return formatWeatherValue(temperature, suffix: "°C")
+    }
+    
+    private var windText: String {
+        guard let windSpeed = homeData?.weather?.wind_speed else {
+            return "-- м/с"
+        }
+        return formatWeatherValue(windSpeed, suffix: " м/с")
+    }
     
     var body: some View {
         ZStack {
             MyRectangle(width: 350, height: 170)
+            
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Image(systemName: "flame.fill")
+                                .foregroundStyle(.orange)
+                            Text("Активность")
+                                .foregroundStyle(Color(hex: "37475a"))
+                            Button {
+                                activeInfo = InfoPopupData(
+                                    title: "Активность",
+                                    img: "info.circle.fill",
+                                    description: """
+                                                Это общий показатель опасности на улице прямо сейчас. Он высчитывается на основе реальных жалоб других пользователей которые находятся рядом с вами.
 
-            HStack(alignment: .top) {
-                VStack(alignment: .leading) {
-                    HStack{
-                        Image(systemName: "flame.fill")
-                            .foregroundStyle(.orange)
-                        Text("Активность")
-                            .foregroundStyle(Color(hex: "37475a"))
-                        Button {
-                            activeInfo = InfoPopupData(
-                                title: "Активность",
-                                img: "info.circle.fill",
-                                description: """
-                                            Это общий показатель опасности на улице прямо сейчас. Он высчитывается на основе реальных жалоб других пользователей которые находятся рядом с вами
-                                            
-                                            (В PRO версии доступен грфаик изменения и многое другое)
-                                            """
-                            )
-                        } label: {
-                            Image(systemName: "info.circle")
-                                .foregroundStyle(.gray.opacity(0.6))
+                                                Справа показывается текущая погода, температура и скорость ветра. Все это влияет на пыльцу.
+                                                
+                                                В PRO версии доступны прогнозы активности с учетом погоных условий
+                                                """
+                                )
+                            } label: {
+                                Image(systemName: "info.circle")
+                                    .foregroundStyle(.gray.opacity(0.6))
+                            }
                         }
+                        HStack(alignment: .bottom, spacing: 4) {
+                            if let activity = homeData?.activity {
+                                Text("\(activity)")
+                                    .font(.system(size: 100, weight: .bold, design: .rounded))
+                                    .minimumScaleFactor(0.4)
+                                    .lineLimit(1)
+                                    .foregroundStyle(.black)
+                            } else {
+                                ProgressView()
+                                    .scaleEffect(2)
+                                    .frame(width: 80, height: 100)
+                                    .tint(Color(hex: Orange))
+                            }
+                            
+                            Text("/ 10")
+                                .padding(.bottom, 25)
+                                .foregroundStyle(Color(hex: "37475a"))
+                        }
+                        .padding(.leading, 20)
                     }
-                    HStack(alignment: .bottom, spacing: 4) {
-                        Text("\(homeData?.activity ?? 0)")
-                            .font(.system(size: 100, weight: .bold, design: .rounded))
-                            .minimumScaleFactor(0.4)
-                            .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    VStack(spacing: 10) {
+                        Image(systemName: homeData?.weather?.icon ?? "")
+                            .font(.system(size: 44, weight: .medium))
                             .foregroundStyle(.black)
+                            .frame(width: 56, height: 56)
                         
-                        Text("/ 10")
-                            .padding(.bottom, 25)
-                            .foregroundStyle(Color(hex: "37475a"))
-                    }
-                }
-                
-                Spacer()
-                ZStack{
-                    ZStack {
-                        
-                        // Сам график
-                        Chart {
-                            let history = homeData?.historyActivity ?? [0, 0, 0, 0, 0]
+                        VStack(spacing: 6) {
+                            Label(temperatureText, systemImage: "thermometer.medium")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Color(hex: "37475a"))
                             
-                            ForEach(Array(history.enumerated()), id: \.offset) { index, value in
-                                // Плавная линия
-                                LineMark(
-                                    x: .value("Время", index),
-                                    y: .value("Активность", value)
-                                )
-                                .interpolationMethod(.catmullRom)
-                                .lineStyle(StrokeStyle(lineWidth: 3))
-                                .foregroundStyle(Color.orange)
-                                
-                                // Заливка градиентом под линией
-                                AreaMark(
-                                    x: .value("Время", index),
-                                    y: .value("Активность", value)
-                                )
-                                .interpolationMethod(.catmullRom)
-                                .foregroundStyle(
-                                    LinearGradient(
-                                        colors: [Color.orange.opacity(0.3), .clear],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                            }
-                        }
-                        .chartYScale(domain: 0...10)
-                        .chartXAxis(.hidden)
-                        .chartYAxis(.hidden)
-                        .padding(12)
-                        
-                        // Размытие самого графика
-                        if !isPro {
-                            Color(hex: "f7f7f7").opacity(0.1)
-                                .background(Material.regular)
-                                .clipShape(RoundedRectangle(cornerRadius: 15))
-                            
-                            // Поверх блюра вешаем иконку PRO
-                            VStack(spacing: 4) {
-                                Image(systemName: "lock.fill")
-                                    .font(.system(size: 20))
-                                    .foregroundStyle(Color(hex: "37475a"))
-                                Text("PRO")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundStyle(Color(hex: "37475a"))
-                                
-                            }
+                            Label(windText, systemImage: "wind")
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color(hex: "37475a"))
                         }
                     }
-                    .frame(width: 140, height: 100)
-                    .frame(maxHeight: .infinity)
+                    .frame(width: 120)
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 20)
+            .padding(.vertical, 18)
             .frame(width: 350, height: 170, alignment: .topLeading)
         }
     }
+}
+
+private func formatWeatherValue(_ value: Double, suffix: String) -> String {
+    let roundedValue = value.rounded()
+    
+    if abs(value - roundedValue) < 0.05 {
+        return "\(Int(roundedValue))\(suffix)"
+    }
+    
+    return String(format: "%.1f%@", value, suffix)
 }

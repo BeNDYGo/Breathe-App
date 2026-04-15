@@ -1,5 +1,13 @@
 import SwiftUI
 
+
+struct InfoPopupData {
+    let title: String
+    let img: String
+    let description: String
+}
+
+
 // MARK: - Универсальное окно подсказки
 struct InfoPopupView: View {
     let info: InfoPopupData
