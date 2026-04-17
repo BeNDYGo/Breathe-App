@@ -13,8 +13,6 @@ struct ProActivityView: View {
 
     var body: some View {
         ZStack {
-            MyRectangle(width: 350, height: 210)
-
             VStack(alignment: .leading, spacing: 0) {
                 // Заголовок
                 HStack(spacing: 6) {
@@ -25,7 +23,7 @@ struct ProActivityView: View {
                         activeInfo = InfoPopupData(
                             title: "Концентрация",
                             img: "",
-                            description: "Этот показатель отражает реальное количество микрочастиц пыльцы в одном кубическом метре воздуха. Значения выше 100 считаются критическими для аллергиков."
+                            description: "Этот показатель отражает реальное количество микрочастиц пыльцы в одном кубическом метре воздуха."
                             
                         )
                     } label: {
@@ -41,6 +39,8 @@ struct ProActivityView: View {
                     VStack(alignment: .leading, spacing: -5) {
                         Text(String(format: "%.1f", data.activity))
                             .font(.system(size: 64, weight: .bold, design: .rounded))
+                            .minimumScaleFactor(0.4)
+                            .lineLimit(1)
                             .foregroundStyle(.black)
                         
                         HStack(alignment: .top, spacing: 0) {
@@ -88,7 +88,7 @@ struct ProActivityView: View {
                         .fill(Color.gray.opacity(0.2))
                         .frame(height: 1)
                     
-                    Text("*при значениях больше 100 проявляются симптомы")
+                    Text("*при значениях выше 100 вы можете почувствовать себя плохо")
                         .font(.system(size: 10))
                         .italic()
                         .foregroundStyle(.gray)

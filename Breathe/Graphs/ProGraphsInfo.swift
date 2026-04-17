@@ -6,8 +6,13 @@ struct Stats: Decodable {
     let avg: Double
 }
 
+struct AllergensLive: Decodable {
+    let name: String
+    let value: Double
+}
 struct ProData: Decodable {
     let activity: Double
+    let allergensLive: [AllergensLive]
     let weatherHourly10: [Double]
     let weatherIconsHourly10: [String]
     let precipitationProbabilityHourly10: [Int]

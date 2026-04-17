@@ -8,12 +8,10 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     
     var cityName: String = "Город"
-    // Только две вещи, которые нужны нашему интерфейсу:
-    var location: CLLocationCoordinate2D? // Текущие координаты
-    var authStatus: CLAuthorizationStatus // Статус разрешения (разрешили/отказали/еще не спрашивали)
+    var location: CLLocationCoordinate2D?
+    var authStatus: CLAuthorizationStatus
 
     override init() {
-        // Сразу при инициализации узнаем текущий статус
         self.authStatus = manager.authorizationStatus
         super.init()
         manager.delegate = self
@@ -84,15 +82,31 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         }
     }
     private func fetchCityName(from coordinate: CLLocationCoordinate2D) {
-        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        CLGeocoder().reverseGeocodeLocation(location) { [weak self] placemarks, error in
-            if let placemark = placemarks?.first {
-                // locality - это город. Если пусто (как бывает в МСК), берем administrativeArea (регион)
-                let city = placemark.locality ?? placemark.administrativeArea ?? "Ваш город"
-                self?.cityName = city
-                // Сохраняем, чтобы больше не геокодировать
-                UserDefaults.standard.set(city, forKey: "saved_city_name")
+        // 1. Создаем объект CLLocation
+        let clLocation = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+        
+        // 2. Передаем в параметр location:
+        guard let request = MKReverseGeocodingRequest(location: clLocation) else { return }
+        
+        Task {
+            do {
+                // 3. Получаем массив MKMapItem
+                let items = try await request.mapItems
+                
+                // 4. Достаем placemark из первого элемента
+                if let placemark = items.first?.placemark {
+                    let city = placemark.locality ?? placemark.administrativeArea ?? "Ваш город"
+                    
+                    await MainActor.run {
+                        self.cityName = city
+                        UserDefaults.standard.set(city, forKey: "saved_city_name")
+                    }
+                }
+            } catch {
+                print("Ошибка геокодинга: \(error.localizedDescription)")
             }
         }
     }
+
+
 }

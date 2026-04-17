@@ -7,7 +7,10 @@ struct GraphsView: View {
     @State private var graphsData: ProData? = nil
     @State private var isLoading = false
     @State private var activeInfo: InfoPopupData? = nil
-
+    
+    // Добавляем кэш последней локации, как в HomeView
+    @State private var lastLoadedCoords: String = ""
+    
     var body: some View {
         ZStack {
             Color(hex: "ede2d1").ignoresSafeArea()
@@ -27,17 +30,23 @@ struct GraphsView: View {
                     .padding(.top, 10)
                     
                     // Количество пыльцы в воздухе
-                    if let data = graphsData{
-                        ProActivityView(data: data, activeInfo: $activeInfo)
-                    } else {
-                        ProgressView()
+                    ZStack{
+                        MyRectangle(width: 350, height: 210)
+                        if let data = graphsData{
+                            ProActivityView(data: data, activeInfo: $activeInfo)
+                        } else {
+                            ProgressView()
+                        }
                     }
                     
                     // ГРАФИК
-                    if let data = graphsData{
-                        WeatherHourlyView(data: data, activeInfo: $activeInfo)
-                    } else {
-                        ProgressView()
+                    ZStack{
+                        MyRectangle(width: 350, height: 280)
+                        if let data = graphsData{
+                            WeatherHourlyView(data: data, activeInfo: $activeInfo)
+                        } else {
+                            ProgressView()
+                        }
                     }
                 }
             }
@@ -48,21 +57,25 @@ struct GraphsView: View {
             }
         }
         .task(id: locationManager.location?.latitude) {
-            if graphsData == nil {
-                await updateData()
-            } else {
-                return
-            }
-        }
-        .refreshable {
-            await updateData()
-        }
+                    guard let loc = locationManager.location else { return }
+                    let currentCoords = "\(loc.latitude),\(loc.longitude)"
+                    
+                    if graphsData != nil && lastLoadedCoords == currentCoords {
+                        return
+                    }
+                    
+                    await updateData(lat: loc.latitude, lon: loc.longitude)
+                    lastLoadedCoords = currentCoords
+                }
+                .refreshable {
+                    if let loc = locationManager.location {
+                        await updateData(lat: loc.latitude, lon: loc.longitude)
+                        lastLoadedCoords = "\(loc.latitude),\(loc.longitude)"
+                    }
+                }
     }
-    
-    private func updateData() async {
-        if let loc = locationManager.location {
-            graphsData = await loadProData(lat: loc.latitude, lon: loc.longitude)
-            print("Update")
-        }
+    private func updateData(lat: Double, lon: Double) async {
+            graphsData = await loadProData(lat: lat, lon: lon)
+            print("GraphsView: Данные загружены для \(lat), \(lon)")
     }
 }
