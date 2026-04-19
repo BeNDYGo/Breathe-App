@@ -1,11 +1,10 @@
 import SwiftUI
 import Charts
 
-struct WeatherHourlyView: View {
+struct ProWeatherHourlyView: View {
     let data: ProData
     @Binding var activeInfo: InfoPopupData? // Провод для окна подсказки
 
-    // Жестко фиксируем ширину одной колонки (одного часа)
     let columnWidth: CGFloat = 55
     
     // Функция для получения времени (например, "14:00")
@@ -18,22 +17,18 @@ struct WeatherHourlyView: View {
     var body: some View {
         ZStack {
             VStack(alignment: .leading, spacing: 10) {
-                
                 // 1. ЗАГОЛОВОК И КНОПКА (i)
-                HStack {
+                HStack(spacing: 6) {
                     Image(systemName: "clock.fill")
                         .foregroundStyle(Color(hex: "ff893f"))
                     
                     Text("Условия на 10 часов")
-                        // Убрали weight: .bold, оставили просто цвет
-                        .font(.system(size: 16, design: .rounded))
                         .foregroundStyle(Color(hex: "37475a"))
                     
                     // Кнопка подсказки
                     Button {
                         activeInfo = InfoPopupData(
                             title: "Погода и Пыльца",
-                            img: "",
                             description: """
                         В этом графике собрана вся важная информация.
                         Температура: Тепло ускоряет распускание почек. При резком потеплении случаются "пыльцевые бури".
@@ -44,11 +39,12 @@ struct WeatherHourlyView: View {
                         )
                     } label: {
                         Image(systemName: "info.circle")
+                            .font(.system(size: 14))
                             .foregroundStyle(.gray.opacity(0.6))
                     }
+                    Spacer()
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.bottom, 10)
 
                 // 2. ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -56,8 +52,8 @@ struct WeatherHourlyView: View {
                         
                         // РЯД 1: Время
                         HStack(spacing: 0) {
-                            ForEach(0..<data.weatherHourly10.count, id: \.self) { i in
-                                Text(getHourString(offset: i))
+                            ForEach(0..<data.weatherTimesHourly10.count, id: \.self) { i in
+                                Text(data.weatherTimesHourly10[i])
                                     .font(.system(size: 12, weight: .medium))
                                     .foregroundStyle(.gray)
                                     .frame(width: columnWidth)
@@ -120,7 +116,8 @@ struct WeatherHourlyView: View {
                         HStack(spacing: 0) {
                             ForEach(0..<data.precipitationProbabilityHourly10.count, id: \.self) { i in
                                 HStack(spacing: 2) {
-                                    Image(systemName: "drop.fill").font(.system(size: 8))
+                                    Image(systemName: "drop.fill")
+                                        .font(.system(size: 8))
                                     Text("\(data.precipitationProbabilityHourly10[i])%")
                                         .font(.system(size: 11, weight: .medium))
                                 }
@@ -133,7 +130,8 @@ struct WeatherHourlyView: View {
                         HStack(spacing: 0) {
                             ForEach(0..<data.windHourly10.count, id: \.self) { i in
                                 HStack(spacing: 2) {
-                                    Image(systemName: "wind").font(.system(size: 10))
+                                    Image(systemName: "wind")
+                                        .font(.system(size: 10))
                                     Text(String(format: "%.1f", data.windHourly10[i]))
                                         .font(.system(size: 11, weight: .medium))
                                 }
@@ -143,13 +141,12 @@ struct WeatherHourlyView: View {
                         }
                         
                     }
-                    // Отступ внутри скролла, чтобы контент не прилипал к левому краю рамки
-                    .padding(.horizontal, 20)
+                    
                 }
                 
-                Spacer(minLength: 0)
             }
+            .padding(20)
         }
-        .frame(width: 350, height: 280)
+        .frame(width: 350, height: 270)
     }
 }

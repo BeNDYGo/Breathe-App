@@ -39,8 +39,8 @@ struct MainTabView: View {
                 .tabItem { Label("Graphs", image: "График") }
                 .badge("pro")
             
-            GameView()
-                .tabItem { Label("Game", image: "Дерево") }
+            AiChatView()
+                .tabItem { Label("AI", image: "Дерево") }
         }
         .tint(Color(hex: "ff893f"))
     }

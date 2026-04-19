@@ -8,15 +8,13 @@ struct GraphsView: View {
     @State private var isLoading = false
     @State private var activeInfo: InfoPopupData? = nil
     
-    // Добавляем кэш последней локации, как в HomeView
-    @State private var lastLoadedCoords: String = ""
     
     var body: some View {
-        ZStack {
+        ZStack() {
             Color(hex: "ede2d1").ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 25) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 20) {
                     // Заголовок
                     HStack {
                         Text("Аналитика")
@@ -28,7 +26,16 @@ struct GraphsView: View {
                     }
                     .padding(.horizontal, 25)
                     .padding(.top, 10)
-                    
+                    // Оценка других пользователей
+                    ZStack{
+                        MyRectangle(width: 350, height: 110)
+                        if let data = graphsData {
+                            ProCommunityView(stats: data.communityReports, activeInfo: $activeInfo)
+                        }
+                        else {
+                            ProgressView()
+                        }
+                    }
                     // Количество пыльцы в воздухе
                     ZStack{
                         MyRectangle(width: 350, height: 210)
@@ -38,17 +45,26 @@ struct GraphsView: View {
                             ProgressView()
                         }
                     }
-                    
+                    // Столбчатая диаграмма долей
+                    ZStack{
+                        MyRectangle(width: 350, height: 200)
+                        if let data = graphsData {
+                            ProAllergensBarView(allergens: data.allergensLive, activeInfo: $activeInfo)
+                        } else {
+                            ProgressView()
+                        }
+                    }
                     // ГРАФИК
                     ZStack{
-                        MyRectangle(width: 350, height: 280)
+                        MyRectangle(width: 350, height: 270)
                         if let data = graphsData{
-                            WeatherHourlyView(data: data, activeInfo: $activeInfo)
+                            ProWeatherHourlyView(data: data, activeInfo: $activeInfo)
                         } else {
                             ProgressView()
                         }
                     }
                 }
+                //
             }
             if let info = activeInfo {
                 InfoPopupView(info: info) { activeInfo = nil }
@@ -57,25 +73,18 @@ struct GraphsView: View {
             }
         }
         .task(id: locationManager.location?.latitude) {
-                    guard let loc = locationManager.location else { return }
-                    let currentCoords = "\(loc.latitude),\(loc.longitude)"
-                    
-                    if graphsData != nil && lastLoadedCoords == currentCoords {
-                        return
-                    }
-                    
-                    await updateData(lat: loc.latitude, lon: loc.longitude)
-                    lastLoadedCoords = currentCoords
+            guard let loc = locationManager.location else { return }
+            await updateData(lat: loc.latitude, lon: loc.longitude)
+
                 }
                 .refreshable {
                     if let loc = locationManager.location {
                         await updateData(lat: loc.latitude, lon: loc.longitude)
-                        lastLoadedCoords = "\(loc.latitude),\(loc.longitude)"
                     }
                 }
     }
     private func updateData(lat: Double, lon: Double) async {
             graphsData = await loadProData(lat: lat, lon: lon)
-            print("GraphsView: Данные загружены для \(lat), \(lon)")
+            print("GraphsView: update \(lat), \(lon)")
     }
 }

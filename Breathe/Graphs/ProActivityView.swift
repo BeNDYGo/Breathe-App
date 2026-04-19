@@ -6,23 +6,25 @@ struct ProActivityView: View {
     @Binding var activeInfo: InfoPopupData?
     
     private var healthColor: Color {
-        if data.activity < 35 { return .green }
-        if data.activity < 75 { return .orange }
+        if data.activity < 100 { return .green }
+        if data.activity < 500 { return .orange }
         return .red
     }
 
     var body: some View {
         ZStack {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
                 // Заголовок
                 HStack(spacing: 6) {
+                    Image(systemName: "app.background.dotted")
+                        .foregroundStyle(.orange)
+                    
                     Text("Количество пыльцы")
                         .foregroundStyle(Color(hex: "37475a"))
 
                     Button {
                         activeInfo = InfoPopupData(
                             title: "Концентрация",
-                            img: "",
                             description: "Этот показатель отражает реальное количество микрочастиц пыльцы в одном кубическом метре воздуха."
                             
                         )
@@ -88,7 +90,7 @@ struct ProActivityView: View {
                         .fill(Color.gray.opacity(0.2))
                         .frame(height: 1)
                     
-                    Text("*при значениях выше 100 вы можете почувствовать себя плохо")
+                    Text("*при значениях выше 100 вы почувствовать симптомы")
                         .font(.system(size: 10))
                         .italic()
                         .foregroundStyle(.gray)

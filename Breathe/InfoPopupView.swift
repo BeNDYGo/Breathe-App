@@ -3,7 +3,6 @@ import SwiftUI
 
 struct InfoPopupData {
     let title: String
-    let img: String
     let description: String
 }
 
@@ -24,14 +23,6 @@ struct InfoPopupView: View {
             
             // 2. Сама карточка
             VStack(spacing: 15) {
-                /*
-                // Иконка для красоты
-                Image(systemName: info.img)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 50, height: 50)
-                    .foregroundStyle(.orange)
-                */
                 // Заголовок (например "Активность")
                 Text(info.title)
                     .font(.system(size: 20, weight: .bold))

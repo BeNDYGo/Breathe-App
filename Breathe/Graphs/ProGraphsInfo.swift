@@ -13,6 +13,7 @@ struct AllergensLive: Decodable {
 struct ProData: Decodable {
     let activity: Double
     let allergensLive: [AllergensLive]
+    let weatherTimesHourly10: [String]
     let weatherHourly10: [Double]
     let weatherIconsHourly10: [String]
     let precipitationProbabilityHourly10: [Int]

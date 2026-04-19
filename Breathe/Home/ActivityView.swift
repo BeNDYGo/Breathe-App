@@ -34,7 +34,6 @@ struct ActivityView: View {
                             Button {
                                 activeInfo = InfoPopupData(
                                     title: "Активность",
-                                    img: "info.circle.fill",
                                     description: """
                                                 Это общий показатель опасности на улице прямо сейчас.
                                                 
@@ -76,11 +75,14 @@ struct ActivityView: View {
                     Spacer()
                     
                     VStack(spacing: 10) {
-                        Image(systemName: homeData?.weather?.icon ?? "")
-                            .font(.system(size: 44, weight: .medium))
-                            .foregroundStyle(.black)
-                            .frame(width: 56, height: 56)
-                        
+                        if let iconWether = homeData?.weather?.icon {
+                            Image(systemName: iconWether)
+                                .font(.system(size: 44, weight: .medium))
+                                .foregroundStyle(.black)
+                                .frame(width: 56, height: 56)
+                        } else {
+                            ProgressView()
+                        }
                         VStack(spacing: 6) {
                             Label(temperatureText, systemImage: "thermometer.medium")
                                 .font(.system(size: 15, weight: .semibold))

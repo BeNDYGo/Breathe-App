@@ -24,7 +24,6 @@ struct TableOfAllergens: View {
                     Button {
                         activeInfo = InfoPopupData(
                             title: "Таблица аллергенов",
-                            img: "info.circle.fill",
                             description: """
                                     Таблица показывает растения, которые цветут в вашем регионе прямо сейчас.
                                     Данные берутся с метеостанций в радиусе нескольких километров.

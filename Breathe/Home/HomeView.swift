@@ -9,10 +9,6 @@ struct HomeView: View {
     
     @State var isShowingCitySearch = false
     @State private var activeInfo: InfoPopupData? = nil
-    @AppStorage("hasSeenPrompt") private var hasSeenPrompt = false
-    
-    @State private var lastLoadedCoords: String = ""
-    
     
     var body: some View {
         ZStack {
@@ -67,25 +63,14 @@ struct HomeView: View {
                 return
             }
             
-            let currentCoords = "\(loc.latitude),\(loc.longitude)"
-            
-            // 2. ПРЕДОХРАНИТЕЛЬ: Если данные для этих координат уже есть, не дергаем сервер
-            if homeData != nil && lastLoadedCoords == currentCoords {
-                return
-            }
-            
-            // 3. Загружаем данные и запоминаем координаты
-            print("Loading data from backend...")
             homeData = await loadHomeData(lat: loc.latitude, lon: loc.longitude)
-            lastLoadedCoords = currentCoords
+            print("HomeView: update \(loc.latitude), \(loc.longitude)")
         }
         .refreshable {
             // Принудительная загрузка данных (свайп вниз)
             if let loc = locationManager.location {
-                print("Update")
                 homeData = await loadHomeData(lat: loc.latitude, lon: loc.longitude)
-                // ИСПРАВЛЕНО: берем широту и долготу напрямую
-                lastLoadedCoords = "\(loc.latitude),\(loc.longitude)"
+                print("HomeView: update \(loc.latitude), \(loc.longitude)")
             }
         }
     }
