@@ -5,7 +5,7 @@ struct AiChatView: View {
 
     @State private var messageText = ""
     @State private var messages: [AiChatMessage] = []
-    @State private var isShowingAttachSheet = false
+    @State private var isAttachSelected = false
     @FocusState private var isMessageFocused: Bool
     @State private var isGenerating = false
     
@@ -18,13 +18,17 @@ struct AiChatView: View {
                 AiChatHeader(remainingRequests: remainingRequests)
 
                 if messages.isEmpty {
-                    Spacer()
-                    AiChatEmptyState()
-                    Spacer()
-                    AiChatSuggestions { suggestion in
-                        messageText = suggestion
-                        isMessageFocused = true
+                    VStack(spacing: 0) {
+                        Spacer()
+                        AiChatEmptyState()
+                        Spacer()
+                        AiChatSuggestions { suggestion in
+                            messageText = suggestion
+                            isMessageFocused = true
+                        }
                     }
+                    .padding(.bottom, 12)
+                    .clipped()
                 } else {
                     ScrollViewReader { proxy in
                         ScrollView(showsIndicators: false) {
@@ -47,6 +51,7 @@ struct AiChatView: View {
                             .padding(.top, 24)
                             .padding(.bottom, 12)
                         }
+                        .clipped()
                         .onChange(of: messages.count) {
                             guard let lastId = messages.last?.id else { return }
                             withAnimation(.easeOut(duration: 0.2)) {
@@ -57,22 +62,19 @@ struct AiChatView: View {
                     
                 }
             }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isMessageFocused = false
+            }
         }
         .safeAreaInset(edge: .bottom) {
             AiChatInputBar(
                 messageText: $messageText,
                 isMessageFocused: $isMessageFocused,
-                onAttach: {
-                    isShowingAttachSheet = true
-                },
+                isAttachSelected: $isAttachSelected,
                 onSend: sendMessage
             )
             .background(Color.clear)
-        }
-        .sheet(isPresented: $isShowingAttachSheet) {
-            AttachDataSheet()
-                .presentationDetents([.fraction(0.5), .large])
-                .presentationDragIndicator(.visible)
         }
     }
 

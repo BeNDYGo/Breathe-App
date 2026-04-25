@@ -3,7 +3,7 @@ import SwiftUI
 struct AiChatInputBar: View {
     @Binding var messageText: String
     let isMessageFocused: FocusState<Bool>.Binding
-    let onAttach: () -> Void
+    @Binding var isAttachSelected: Bool
     let onSend: () -> Void
     
     private let attachButtonSize: CGFloat = 40
@@ -12,19 +12,25 @@ struct AiChatInputBar: View {
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
             Button {
-                onAttach()
+                isAttachSelected.toggle()
             } label: {
                 Image(systemName: "paperclip")
                     .font(.system(size: 18))
                     .foregroundStyle(.white)
                     .frame(width: attachButtonSize, height: attachButtonSize)
-                    .background(Color(hex: "ff893f"))
+                    .background(isAttachSelected ? Color(hex: "ff893f") : Color.gray.opacity(0.55))
                     .clipShape(Circle())
                     .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
             }
 
             HStack(alignment: .center) {
-                TextField("Введите сообщение...", text: $messageText, axis: .vertical)
+                TextField(
+                    "",
+                    text: $messageText,
+                    prompt: Text("Введите сообщение...")
+                        .foregroundStyle(Color.gray.opacity(0.75)),
+                    axis: .vertical
+                )
                     .lineLimit(1...5)
                     .font(.system(size: 16))
                     .foregroundStyle(Color(hex: "37475a"))
