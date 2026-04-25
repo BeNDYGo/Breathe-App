@@ -29,6 +29,7 @@ struct BreatheApp: App {
 
 struct MainTabView: View {
     var locationManager: LocationManager
+    @State private var AIRequests: Int = 5
     
     var body: some View {
         TabView {
@@ -39,7 +40,7 @@ struct MainTabView: View {
                 .tabItem { Label("Graphs", image: "График") }
                 .badge("pro")
             
-            AiChatView()
+            AiChatView(remainingRequests: AIRequests)
                 .tabItem { Label("AI", image: "Дерево") }
         }
         .tint(Color(hex: "ff893f"))

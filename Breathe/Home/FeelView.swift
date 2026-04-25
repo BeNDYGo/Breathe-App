@@ -30,10 +30,10 @@ struct FeelView: View {
                     ZStack {
                         MiniRectangle(width: 70, height: 30, color: "dcfcdc")
                         HStack(spacing: 1) {
-                            Image(systemName: "tree.circle.fill")
+                            Image(systemName: "sparkles.2")
                                 .font(.system(size: 21))
                                 .foregroundStyle(.black)
-                            Text("+10")
+                            Text("+1")
                                 .foregroundStyle(Color(hex: "286127"))
                         }
                     }
