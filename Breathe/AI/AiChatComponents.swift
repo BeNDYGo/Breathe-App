@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AiChatHeader: View {
     let remainingRequests: Int
+    let onInfoTap: () -> Void
 
     var body: some View {
         HStack {
@@ -9,6 +10,14 @@ struct AiChatHeader: View {
                 .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(Color(hex: "37475a"))
             Spacer()
+            Button {
+                onInfoTap()
+            } label: {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(Color(hex: "37475a"))
+            }
+            .padding(.trailing, 10)
             HStack(spacing: 6) {
                 Image(systemName: "sparkles.2")
                     .font(.system(size: 24))

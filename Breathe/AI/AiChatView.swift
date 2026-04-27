@@ -1,11 +1,14 @@
 import SwiftUI
+import CoreLocation
 
 struct AiChatView: View {
     let remainingRequests: Int
+    var locationManager: LocationManager
 
     @State private var messageText = ""
     @State private var messages: [AiChatMessage] = []
     @State private var isAttachSelected = false
+    @State private var activeInfo: InfoPopupData? = nil
     @FocusState private var isMessageFocused: Bool
     @State private var isGenerating = false
     
@@ -15,7 +18,12 @@ struct AiChatView: View {
             Color(hex: "ede2d1").ignoresSafeArea()
 
             VStack(spacing: 0) {
-                AiChatHeader(remainingRequests: remainingRequests)
+                AiChatHeader(remainingRequests: remainingRequests) {
+                    activeInfo = InfoPopupData(
+                        title: "Как работает AI",
+                        description: "Если скрепка оранжевая, ИИ передается ваше местоположение и данные из приложения."
+                    )
+                }
 
                 if messages.isEmpty {
                     VStack(spacing: 0) {
@@ -66,6 +74,14 @@ struct AiChatView: View {
             .onTapGesture {
                 isMessageFocused = false
             }
+
+            if let info = activeInfo {
+                InfoPopupView(info: info) {
+                    activeInfo = nil
+                }
+                .transition(.opacity)
+                .animation(.easeInOut, value: activeInfo != nil)
+            }
         }
         .safeAreaInset(edge: .bottom) {
             AiChatInputBar(
@@ -93,7 +109,13 @@ struct AiChatView: View {
         isGenerating = true
 
         Task {
-            if let aiResponse = await sendChatMessage(text: textToSend) {
+            let coordinates = currentCoordinatesForRequest()
+
+            if let aiResponse = await sendChatMessage(
+                text: textToSend,
+                lat: coordinates?.latitude,
+                lon: coordinates?.longitude
+            ) {
                 
                 await MainActor.run {
                     messages.append(AiChatMessage(text: aiResponse, isUser: false))
@@ -106,6 +128,16 @@ struct AiChatView: View {
                 }
             }
         }
+    }
+
+    private func currentCoordinatesForRequest() -> (latitude: Double, longitude: Double)? {
+        guard isAttachSelected else { return nil }
+
+        if let location = locationManager.location {
+            return (location.latitude, location.longitude)
+        } 
+
+        return nil
     }
 }
 

@@ -40,7 +40,7 @@ struct MainTabView: View {
                 .tabItem { Label("Graphs", image: "График") }
                 .badge("pro")
             
-            AiChatView(remainingRequests: AIRequests)
+            AiChatView(remainingRequests: AIRequests, locationManager: locationManager)
                 .tabItem { Label("AI", image: "Дерево") }
         }
         .tint(Color(hex: "ff893f"))

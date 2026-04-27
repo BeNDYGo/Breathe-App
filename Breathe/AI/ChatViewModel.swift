@@ -4,6 +4,8 @@ import SwiftUI
 // 1. Что отправляем
 struct ChatRequest: Codable {
     let message: String
+    let lat: Double?
+    let lon: Double?
 }
 
 // 2. Что получаем
@@ -12,14 +14,14 @@ struct ChatResponse: Codable {
 }
 
 // 3. Чистая функция запроса
-func sendChatMessage(text: String) async -> String? {
+func sendChatMessage(text: String, lat: Double? = nil, lon: Double? = nil) async -> String? {
     guard let url = URL(string: "\(baseURL)/chat") else { return nil }
     
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     
-    let body = ChatRequest(message: text)
+    let body = ChatRequest(message: text, lat: lat, lon: lon)
     request.httpBody = try? JSONEncoder().encode(body)
     
     do {
